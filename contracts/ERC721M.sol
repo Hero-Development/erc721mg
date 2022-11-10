@@ -474,8 +474,7 @@ contract ERC721M is IERC721M, ERC721AQueryable, Ownable, ReentrancyGuard {
 
     /**
      * @notice send all of an address's purchased tokens.
-     * @dev if some tokens have already been sent, the remainder must be sent
-     *   using sendTokens().
+     * @param mintStage stage to send tokens for.
      * @param to address to send tokens to.
      */
     function sendMintTokens(uint256 mintStage, address to) public onlyOwner nonReentrant{
@@ -483,7 +482,16 @@ contract ERC721M is IERC721M, ERC721AQueryable, Ownable, ReentrancyGuard {
         _safeMint(to, qty);
     }
 
-
+    /**
+     * @notice send tokens to a batch of addresses.
+     * @param mintStage stage to send tokens for.
+     * @param addresses array of addresses to send tokens to.
+     */
+    function sendMintTokensBatch(uint256 mintStage, address[] calldata addresses) external onlyOwner {
+        for (uint256 i; i < addresses.length; i++) {
+            sendMintTokens(mintStage, addresses[i]);
+        }
+    }
 
     /**
      * @dev Mints token(s) by owner.
