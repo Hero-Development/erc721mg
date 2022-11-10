@@ -257,9 +257,20 @@ describe('ERC721MCallback', () => {
 
       // Setup the test context: block.timestamp should comply to the stage being active
       await ethers.provider.send('evm_mine', [stageStart - 1]);
-      await readonlyContract.mint(1, [], 0, '0x', {
+      const txn = await readonlyContract.mint(1, [], 0, '0x', {
         value: ethers.utils.parseEther('0.1'),
       });
+
+
+
+      const txn2 = await txn.wait();
+      const mints = txn2.events?.filter( evt => evt.event === 'Mint' );
+      if( mints && mints.length ){
+        const eventArgs: any = mints[0].args;
+        await contract.sendMintTokens(0, eventArgs.to );
+      }
+
+
 
       expect(await readonlyContract.balanceOf(readonly.address)).to.equal(1);
       expect(await readonlyContract.totalSupply()).to.equal(1);

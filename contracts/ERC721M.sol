@@ -23,6 +23,9 @@ import "./IERC721M.sol";
 contract ERC721M is IERC721M, ERC721AQueryable, Ownable, ReentrancyGuard {
     using ECDSA for bytes32;
 
+    event Mint( address to, uint256 qty );
+
+
     // Whether this contract is mintable.
     bool private _mintable;
 
@@ -438,7 +441,7 @@ contract ERC721M is IERC721M, ERC721AQueryable, Ownable, ReentrancyGuard {
 
         // Check global wallet limit if applicable
         if (_globalWalletLimit > 0) {
-            if (_numberMinted(to) + qty > _globalWalletLimit)
+            if (stageReservations(activeStage, to) + qty > _globalWalletLimit)
                 revert WalletGlobalLimitExceeded();
         }
 
@@ -462,8 +465,25 @@ contract ERC721M is IERC721M, ERC721AQueryable, Ownable, ReentrancyGuard {
 
         _stageMintedCountsPerWallet[activeStage][to] += qty;
         _stageMintedCounts[activeStage] += qty;
+        emit Mint( to, qty );
+    }
+
+    function stageReservations(uint256 mintStage, address account) public view returns(uint256){
+        return _stageMintedCountsPerWallet[mintStage][account];
+    }
+
+    /**
+     * @notice send all of an address's purchased tokens.
+     * @dev if some tokens have already been sent, the remainder must be sent
+     *   using sendTokens().
+     * @param to address to send tokens to.
+     */
+    function sendMintTokens(uint256 mintStage, address to) public onlyOwner nonReentrant{
+        uint256 qty = stageReservations(mintStage, to);
         _safeMint(to, qty);
     }
+
+
 
     /**
      * @dev Mints token(s) by owner.
