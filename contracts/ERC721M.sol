@@ -478,7 +478,13 @@ contract ERC721M is IERC721M, ERC721AQueryable, Ownable, ReentrancyGuard {
      * @param to address to send tokens to.
      */
     function sendMintTokens(uint256 mintStage, address to) public onlyOwner nonReentrant{
+        uint256 prev = _numberMinted(to);
         uint256 qty = stageReservations(mintStage, to);
+        if (qty <= prev) return;
+
+        qty -= prev;
+        if (totalSupply() + qty > _maxMintableSupply) revert NoSupplyLeft();
+
         _safeMint(to, qty);
     }
 
